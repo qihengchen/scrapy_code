@@ -1,7 +1,5 @@
 import scrapy
 
-#TODO: fetch "Other" subfields, output 'Field' column
-
 class SpiderItem(scrapy.Item):
 	Field = scrapy.Field()
 	Action = scrapy.Field()
@@ -22,7 +20,11 @@ class GoogleAssistantSpider(scrapy.Spider):
 	developer_class_id = "lUcxUb CbqDob"
 	data_link_class_id = "vsao6c"
 
-	field = "Arts & lifestyle"
+	metadata = {
+		"Arts & lifestyle" : (7, "OtherLifestyle"),
+		"Business & finance" : (2, "OtherBusinessAndFinance"),
+		#"Education & reference" : (3, "OtherEducationAndReference")
+	}
 
 	# conventions
 	# field: "Arts & lifestyle"
@@ -31,18 +33,30 @@ class GoogleAssistantSpider(scrapy.Spider):
 
 	# urls - ["url1", "url2"...]
 	def start_requests(self):
-		
-		field_urls = ["https://assistant.google.com/explore/c/7/?hl=en"]
+		#for i in range(20):
+			#field_url = "https://assistant.google.com/explore/c/" + str(i) + "/?hl=en"
+		#field_urls = ["https://assistant.google.com/explore/c/7/?hl=en"]
 
-		for url in field_urls:
-			yield scrapy.Request(url=url, callback=self.parse_field_page)
+		for field, v in self.metadata.items():
+			print(field)
+			url = "https://assistant.google.com/explore/c/%d/?hl=en" % v[0]
+			other_page_url = "https://assistant.google.com/explore/i?intent=%s&hl=en-US" % v[1]
+			#req = scrapy.Request(url=url, callback=lambda r: self.parse_field_page(r, field))
+			req1 = scrapy.Request(url=url, callback=self.parse_field_page)
+			req1.meta['field'] = field
+			yield req1
+			req2 = scrapy.Request(url=other_page_url, callback=self.parse_sub_field_page)
+			req2.meta['field'] = field
+			yield req2
 
 
 	def parse_field_page(self, response):
+		field = response.request.meta['field']
+		#print(field)
 		# extract "View More" urls
 		headers = response.xpath('//span[contains(@role, "heading")]/text()').extract()
-		print("--- Headers --- ", type(headers))
-		print(headers)
+		#print("--- Headers --- ", type(headers))
+		#print(headers)
 		sub_field_urls = {}
 		for header in headers:
 			sub_field = header.encode("ascii")
@@ -50,10 +64,13 @@ class GoogleAssistantSpider(scrapy.Spider):
 
 		# [example] https://assistant.google.com/explore/i?intent=CheckHoroscopes&hl=en-US
 		for k, url in sub_field_urls.items():
-			yield scrapy.Request(url=url, callback=self.parse_sub_field_page)
-		
+			req = scrapy.Request(url=url, callback=self.parse_sub_field_page)
+			req.meta['field'] = field
+			yield req
+
 
 	def parse_sub_field_page(self, response):
+		field = response.request.meta['field']
 		# data-link="services/a/uid/000000207e4476cb?hl=en"
 		# [example] https://assistant.google.com/services/a/uid/000000207e4476cb?hl=en
 		data_links = response.xpath('//div[@class=$val]/@data-link', val="vsao6c").extract()
@@ -68,7 +85,9 @@ class GoogleAssistantSpider(scrapy.Spider):
 			data_link = data_link.encode("ascii")
 			url = self.prep_action_url(data_link)
 
-			yield scrapy.Request(url=url, callback=self.parse_action_page)
+			req = scrapy.Request(url=url, callback=self.parse_action_page)
+			req.meta['field'] = field
+			yield req
 
 	# this function outputs data
 	def parse_action_page(self, response):
@@ -80,17 +99,20 @@ class GoogleAssistantSpider(scrapy.Spider):
 		users_class_id = "rriIab CdFZQ"
 		developer_class_id = "lUcxUb CbqDob"
 		"""
-		#field = response.xpath('//div[@class=$val]/text()', val="tqwMZ VoIGZc").extract()
-		action = response.xpath('//div[@class=$val]/text()', val="YtWsM RfR9R").extract_first().encode("utf-8")
-		description = response.xpath('//div[@class=$val]/text()', val="IB9ccf").extract_first().encode("utf-8")
-		rating = response.xpath('//div[@class=$val]/text()', val="NRNQAb FTlnHb").extract_first().encode("utf-8")
-		users = response.xpath('//div[@class=$val]/text()', val="rriIab CdFZQ").extract_first().encode("utf-8")
+		field = response.request.meta['field']
+		action = response.xpath('//div[@class=$val]/text()', val="YtWsM RfR9R").extract_first()
+		if action: action = action.encode("utf-8") 
+		description = response.xpath('//div[@class=$val]/text()', val="IB9ccf").extract_first()
+		if description: description = description.encode("utf-8")
+		rating = response.xpath('//div[@class=$val]/text()', val="NRNQAb FTlnHb").extract_first()
+		if rating: rating = rating.encode("utf-8")
+		users = response.xpath('//div[@class=$val]/text()', val="rriIab CdFZQ").extract_first()
+		if users: users = users.encode("utf-8")
 		developer = response.xpath('//div[@class=$val]/text()', val="lUcxUb CbqDob").extract_first()
-		if developer != None:
-			developer = developer.encode("utf-8")
+		if developer: developer = developer.encode("utf-8")
 
 		item = SpiderItem()
-		item['Field'] = self.field
+		item['Field'] = field
 		item['Action'] = action
 		item['Description'] = description
 		item['Rating'] = rating
