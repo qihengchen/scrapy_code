@@ -21,9 +21,24 @@ class GoogleAssistantSpider(scrapy.Spider):
 	data_link_class_id = "vsao6c"
 
 	metadata = {
-		"Arts & lifestyle" : (7, "OtherLifestyle"),
-		"Business & finance" : (2, "OtherBusinessAndFinance"),
-		#"Education & reference" : (3, "OtherEducationAndReference")
+		"Arts & lifestyle": (7, "OtherLifestyle"),
+		"Business & finance": (2, "OtherBusinessAndFinance"),
+		"Education & reference": (3, "OtherEducationAndReference"),
+		"Food & drink": (4, "OtherFood"),
+		"Games & fun": (5, "OtherGames"),
+		"Health & fitness": (6, "OtherHealthAndFitness"),
+		"Home control": (19, "OtherHomeControl"),
+		"Kids & family": (20, "OtherKidsAndFamily"),
+		"Local": (8, "OtherLocal"),
+		"Movies, photos & TV": (9, "OtherMoviesAndTv"),
+		"Music & audio": (10, "OtherMusicAndAudio"),
+		"News & magazines": (1, "OtherNews"),
+		"Productivity": (12, "OtherProductivity"),
+		"Shopping": (13, "OtherShopping"),
+		"Social & communication": (14, "OtherSocial"),
+		"Sports": (15, "OtherSports"),
+		"Travel & transportation": (16, "OtherTravelAndTransportation"),
+		"Weather": (18, "OtherWeather")
 	}
 
 	# conventions
@@ -36,7 +51,7 @@ class GoogleAssistantSpider(scrapy.Spider):
 		#for i in range(20):
 			#field_url = "https://assistant.google.com/explore/c/" + str(i) + "/?hl=en"
 		#field_urls = ["https://assistant.google.com/explore/c/7/?hl=en"]
-
+		
 		for field, v in self.metadata.items():
 			print(field)
 			url = "https://assistant.google.com/explore/c/%d/?hl=en" % v[0]
