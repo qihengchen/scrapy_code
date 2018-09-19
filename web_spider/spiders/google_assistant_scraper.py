@@ -11,6 +11,8 @@ class SpiderItem(scrapy.Item):
 	Rating = scrapy.Field()
 	Users = scrapy.Field()
 	Developer = scrapy.Field()
+	Url = scrapy.Field()
+	Duplicate = scrapy.Field()
 
 """
 	field_class_id = "tqwMZ VoIGZc"
@@ -23,15 +25,7 @@ class SpiderItem(scrapy.Item):
 """
 
 class GoogleAssistantSpider(scrapy.Spider):
-	name = "web_spider"
-
-	"""
-	metadata = {
-		"Arts & lifestyle": (7, "OtherLifestyle"),
-		"Business & finance": (2, "OtherBusinessAndFinance"),
-		"Social & communication": (14, "OtherSocial"),
-	}
-	"""
+	name = "Google_spider"
 
 	metadata = {
 		#"Arts & lifestyle": (7, "OtherLifestyle"),
@@ -49,7 +43,6 @@ class GoogleAssistantSpider(scrapy.Spider):
 		#"Productivity": (12, "OtherProductivity"),
 		#"Shopping": (13, "OtherShopping"),
 		#"Social & communication": (14, "OtherSocial"),
-		
 		#"Sports": (15, "OtherSports"),
 		#"Travel & transportation": (16, "OtherTravelAndTransportation"),
 		"Weather": (18, "OtherWeather")
@@ -129,7 +122,15 @@ class GoogleAssistantSpider(scrapy.Spider):
 		users_class_id = "rriIab CdFZQ"
 		developer_class_id = "lUcxUb CbqDob"
 		"""
+		is_duplicate = False
+
 		field = response.request.meta['field']
+		field = field.strip()
+		primary_field = response.xpath('//div[@class=$val]/text()', val="rkJR4e CdFZQ").extract_first()
+		if primary_field: primary_field.encode("utf-8").strip()
+		if primary_field != field:
+			is_duplicate = True
+
 		action = response.xpath('//div[@class=$val]/text()', val="YtWsM RfR9R").extract_first()
 		if action: action = action.encode("utf-8") 
 		description = response.xpath('//div[@class=$val]/text()', val="IB9ccf").extract_first()
@@ -140,6 +141,7 @@ class GoogleAssistantSpider(scrapy.Spider):
 		if users: users = users.encode("utf-8")
 		developer = response.xpath('//div[@class=$val]/text()', val="lUcxUb CbqDob").extract_first()
 		if developer: developer = developer.encode("utf-8")
+		url = response.url
 
 		item = SpiderItem()
 		item['Field'] = field
@@ -148,6 +150,9 @@ class GoogleAssistantSpider(scrapy.Spider):
 		item['Rating'] = rating
 		item['Users'] = users
 		item['Developer'] = developer
+		item['Url'] = url
+		item['Duplicate'] = is_duplicate
+
 		yield item
 
 
